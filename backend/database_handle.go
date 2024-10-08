@@ -2,8 +2,10 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"time"
 )
@@ -66,4 +68,51 @@ func createTableFromSQL(db *sql.DB, file string) {
 	}
 
 	fmt.Println("Table created successfully!")
+}
+
+func insertUserFromHTTPReq(writer http.ResponseWriter, req *http.Request) {
+	var user User
+
+	err := json.NewDecoder(req.Body).Decode(&user)
+	if err != nil {
+		http.Error(writer, "Invalid Input", http.StatusBadRequest)
+		return
+	}
+
+	query := `INSERT INTO users (username, email, pswd, created_at) VALUES ($1, $2, $3, $4)`
+
+	_, err = db.Exec(query, user.Username, user.Email, user.Password, time.Now())
+	if err != nil {
+		http.Error(writer, "Could not add user", http.StatusInternalServerError)
+		log.Println("Error adding user: ", err)
+		return
+	}
+
+	writer.WriteHeader(http.StatusCreated)
+	json.NewEncoder(writer).Encode(map[string]string{"message": "User created successfully"})
+	fmt.Println("User added successfully!")
+}
+
+func insertTaskFromHTTPReq(writer http.ResponseWriter, req *http.Request) {
+	var task Task
+
+	err := json.NewDecoder(req.Body).Decode(&task)
+	if err != nil {
+		http.Error(writer, "Invalid Input", http.StatusBadRequest)
+		return
+	}
+
+	query := `INSERT INTO tasks (title, description, start_time, end_time, status, user_id)
+				VALUES ($1, $2, $3, $4, $5, $6)`
+
+	_, err = db.Exec(query, task.Title, task.Description, task.StartTime, task.EndTime, task.Status, task.UserID)
+	if err != nil {
+		http.Error(writer, "Could not add task", http.StatusInternalServerError)
+		log.Println("Error adding task: ", err)
+		return
+	}
+
+	writer.WriteHeader(http.StatusCreated)
+	json.NewEncoder(writer).Encode(map[string]string{"message": "User created successfully"})
+	fmt.Println("Task added successfully!")
 }
