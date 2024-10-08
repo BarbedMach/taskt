@@ -29,6 +29,18 @@ services:
     networks:
       - app-network
 
+  nginx:
+    image: nginx:alpine
+    build:
+      context: ./frontend
+    container_name: nginx_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - app
+    networks:
+      - app-network
+
 networks:
   app-network:
     driver: bridge
