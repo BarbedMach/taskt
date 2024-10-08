@@ -1,24 +1,48 @@
 package main
 
 import (
-	"log"
 	"net/http"
 
+	"github.com/gorilla/handlers"
+	_ "github.com/gorilla/handlers"
 	_ "github.com/lib/pq"
 )
+
+func usersHandler(writer http.ResponseWriter, req *http.Request) {
+	switch req.Method {
+	case http.MethodGet:
+		fetchUsers(writer, req)
+	case http.MethodPost:
+		insertUser(writer, req)
+	default:
+		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func tasksHandler(writer http.ResponseWriter, req *http.Request) {
+	switch req.Method {
+	case http.MethodGet:
+		fetchTasks(writer, req)
+	case http.MethodPost:
+		insertTask(writer, req)
+	default:
+		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
 
 func main() {
 	initDB()
 
-	createTableFromSQL(db, "users.sql")
-	createTableFromSQL(db, "tasks.sql")
+	corsObj := handlers.AllowedOrigins([]string{"*"})
+	corsMethods := handlers.AllowedMethods([]string{"GET", "POST", "OPTIONS"})
+	corsHeaders := handlers.AllowedHeaders([]string{"Content-Type"})
 
-	http.HandleFunc("/users", insertUserFromHTTPReq)
-	http.HandleFunc("/tasks", insertTaskFromHTTPReq)
+	http.HandleFunc("/users", usersHandler)
+	http.HandleFunc("/tasks", tasksHandler)
 
-	err := http.ListenAndServe(":8080", nil)
+	err := http.ListenAndServe(":8080", handlers.CORS(corsHeaders, corsMethods, corsObj)(http.DefaultServeMux))
 	if err != nil {
-		log.Fatalf("Error starting server: %s", err)
+		panic(err)
 	}
 
 	closeDB()

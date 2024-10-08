@@ -12,6 +12,22 @@ import (
 
 var db *sql.DB
 
+func createTableFromSQL(db *sql.DB, file string) {
+	filepath := "./db/tables/" + file
+
+	sqlFile, err := os.ReadFile(filepath)
+	if err != nil {
+		log.Fatalf("Failed to read SQL file: %v", err)
+	}
+
+	_, err = db.Exec(string(sqlFile))
+	if err != nil {
+		log.Fatalf("Failed to create table: %v", err)
+	}
+
+	fmt.Println("Table created successfully!")
+}
+
 func generateConnectionString() string {
 	user := os.Getenv("POSTGRES_USER")
 	password := os.Getenv("POSTGRES_PASSWORD")
@@ -48,29 +64,16 @@ func initDB() {
 	}
 
 	fmt.Println("Successfully connected to PostgreSQL!")
+
+	createTableFromSQL(db, "users.sql")
+	createTableFromSQL(db, "tasks.sql")
 }
 
 func closeDB() {
 	db.Close()
 }
 
-func createTableFromSQL(db *sql.DB, file string) {
-	filepath := "./db/tables/" + file
-
-	sqlFile, err := os.ReadFile(filepath)
-	if err != nil {
-		log.Fatalf("Failed to read SQL file: %v", err)
-	}
-
-	_, err = db.Exec(string(sqlFile))
-	if err != nil {
-		log.Fatalf("Failed to create table: %v", err)
-	}
-
-	fmt.Println("Table created successfully!")
-}
-
-func insertUserFromHTTPReq(writer http.ResponseWriter, req *http.Request) {
+func insertUser(writer http.ResponseWriter, req *http.Request) {
 	var user User
 
 	err := json.NewDecoder(req.Body).Decode(&user)
@@ -93,7 +96,7 @@ func insertUserFromHTTPReq(writer http.ResponseWriter, req *http.Request) {
 	fmt.Println("User added successfully!")
 }
 
-func insertTaskFromHTTPReq(writer http.ResponseWriter, req *http.Request) {
+func insertTask(writer http.ResponseWriter, req *http.Request) {
 	var task Task
 
 	err := json.NewDecoder(req.Body).Decode(&task)
@@ -115,4 +118,58 @@ func insertTaskFromHTTPReq(writer http.ResponseWriter, req *http.Request) {
 	writer.WriteHeader(http.StatusCreated)
 	json.NewEncoder(writer).Encode(map[string]string{"message": "User created successfully"})
 	fmt.Println("Task added successfully!")
+}
+
+func fetchUsers(writer http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodGet {
+		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var users []User
+	rows, err := db.Query("SELECT id, username, email FROM users")
+	if err != nil {
+		http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var user User
+		if err := rows.Scan(&user.ID, &user.Username, &user.Email); err != nil {
+			http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		users = append(users, user)
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(writer).Encode(users)
+}
+
+func fetchTasks(writer http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodGet {
+		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var tasks []Task
+	rows, err := db.Query("SELECT id, title, description, status FROM tasks")
+	if err != nil {
+		http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var task Task
+		if err := rows.Scan(&task.ID, &task.Title, &task.Description, &task.Status); err != nil {
+			http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		tasks = append(tasks, task)
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(writer).Encode(tasks)
 }
