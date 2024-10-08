@@ -1,8 +1,7 @@
-version: '3.8'
-
 services:
   app:
-    build: .
+    build:
+      context: ./backend
     container_name: go_app
     depends_on:
       - db
@@ -17,7 +16,7 @@ services:
       - app-network
   
   db:
-    image: postges:15
+    image: postgres
     container_name: postgres_db
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
