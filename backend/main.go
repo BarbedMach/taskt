@@ -4,33 +4,13 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	_ "github.com/lib/pq"
 )
 
-func createTableFromSQL(db *sql.DB, filepath string) {
-	sqlFile, err := os.ReadFile(filepath)
-	if err != nil {
-		log.Fatalf("Failed to read SQL file: %v", err)
-	}
-
-	_, err = db.Exec(string(sqlFile))
-	if err != nil {
-		log.Fatalf("Failed to create table: %v", err)
-	}
-
-	fmt.Println("Table created successfully!")
-}
-
 func main() {
-	user := os.Getenv("POSTGRES_USER")
-	password := os.Getenv("POSTGRES_PASSWORD")
-	dbName := os.Getenv("POSTGRES_DB")
-	host := os.Getenv("DB_HOST")
-
-	connStr := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", host, user, password, dbName)
+	connStr := generateConnectionString()
 
 	var db *sql.DB
 	var err error
@@ -59,8 +39,6 @@ func main() {
 	defer db.Close()
 	fmt.Println("Successfully connected to PostgreSQL!")
 
-	sqlTableDir := "./db/tables/"
-
-	createTableFromSQL(db, sqlTableDir+"users.sql")
-	createTableFromSQL(db, sqlTableDir+"tasks.sql")
+	createTableFromSQL(db, "users.sql")
+	createTableFromSQL(db, "tasks.sql")
 }
