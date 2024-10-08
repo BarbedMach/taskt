@@ -1,5 +1,117 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User and Task Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        form {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        input {
+            margin: 5px 0;
+            padding: 10px;
+            width: 100%;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
 <body>
-    <p>Hello from docker!</p>
+
+    <h1>User and Task Management</h1>
+
+    <h2>Add User</h2>
+    <form id="userForm">
+        <input type="text" id="username" placeholder="Username" required>
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <button type="submit">Add User</button>
+    </form>
+
+    <h2>Add Task</h2>
+    <form id="taskForm">
+        <input type="text" id="taskTitle" placeholder="Task Title" required>
+        <input type="text" id="taskDescription" placeholder="Task Description" required>
+        <input type="datetime-local" id="startTime" required>
+        <input type="datetime-local" id="endTime" required>
+        <select id="taskStatus" required>
+            <option value="" disabled selected>Status</option>
+            <option value="completed">Completed</option>
+            <option value="pending">Pending</option>
+        </select>
+        <input type="number" id="userId" placeholder="User ID (for task)" required>
+        <button type="submit">Add Task</button>
+    </form>
+
+    <script>
+        // Function to add a user
+        document.getElementById('userForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            fetch('http://localhost:8080/users', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username, email, password }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('User added successfully!');
+                document.getElementById('userForm').reset();
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        });
+
+        // Function to add a task
+        document.getElementById('taskForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const title = document.getElementById('taskTitle').value;
+            const description = document.getElementById('taskDescription').value;
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            const status = document.getElementById('taskStatus').value;
+            const userId = document.getElementById('userId').value;
+
+            fetch('http://localhost:8080/tasks', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ title, description, start_time: startTime, end_time: endTime, status, user_id: userId }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('Task added successfully!');
+                document.getElementById('taskForm').reset();
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        });
+    </script>
+
 </body>
 </html>
