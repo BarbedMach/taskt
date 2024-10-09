@@ -91,9 +91,13 @@ func insertUser(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	response := map[string]interface{}{
+		"success": true,
+		"message": "User created successfully",
+	}
+
 	writer.WriteHeader(http.StatusCreated)
-	json.NewEncoder(writer).Encode(map[string]string{"message": "User created successfully"})
-	fmt.Println("User added successfully!")
+	json.NewEncoder(writer).Encode(response)
 }
 
 func insertTask(writer http.ResponseWriter, req *http.Request) {
@@ -127,7 +131,7 @@ func fetchUsers(writer http.ResponseWriter, req *http.Request) {
 	}
 
 	var users []User
-	rows, err := db.Query("SELECT id, username, email FROM users")
+	rows, err := db.Query("SELECT * FROM users")
 	if err != nil {
 		http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
 		return
@@ -154,7 +158,7 @@ func fetchTasks(writer http.ResponseWriter, req *http.Request) {
 	}
 
 	var tasks []Task
-	rows, err := db.Query("SELECT id, title, description, status FROM tasks")
+	rows, err := db.Query("SELECT * FROM tasks")
 	if err != nil {
 		http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
 		return
@@ -163,7 +167,7 @@ func fetchTasks(writer http.ResponseWriter, req *http.Request) {
 
 	for rows.Next() {
 		var task Task
-		if err := rows.Scan(&task.ID, &task.Title, &task.Description, &task.Status); err != nil {
+		if err := rows.Scan(&task.UserID, &task.Title, &task.Description, &task.Status); err != nil {
 			http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
@@ -172,4 +176,71 @@ func fetchTasks(writer http.ResponseWriter, req *http.Request) {
 
 	writer.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(writer).Encode(tasks)
+}
+
+func fetchTasksByID(userID int) ([]Task, error) {
+	var tasks []Task
+	rows, err := db.Query("SELECT * FROM tasks WHERE user_id = $1", userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var task Task
+		err := rows.Scan(&task.Title, &task.Description, &task.StartTime, &task.EndTime, &task.Status)
+		if err != nil {
+			return nil, err
+		}
+		tasks = append(tasks, task)
+	}
+
+	return tasks, nil
+}
+
+func loginUser(writer http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodPost {
+		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var user User
+	err := json.NewDecoder(req.Body).Decode(&user)
+	if err != nil {
+		http.Error(writer, "Invalid Input.", http.StatusBadRequest)
+		return
+	}
+
+	query := `SELECT id FROM users WHERE email = $1 AND pswd = $2`
+	var userID int
+
+	err = db.QueryRow(query, user.Email, user.Password).Scan(&userID)
+	if err != nil {
+		response := map[string]interface{}{
+			"success": false,
+			"message": "Invalid Credentials!",
+		}
+
+		writer.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(writer).Encode(response)
+		return
+	}
+
+	tasks, err := fetchTasksByID(userID)
+	if err != nil {
+		http.Error(writer, "Internal Server Issue", http.StatusInternalServerError)
+		return
+	}
+
+	response := map[string]interface{}{
+		"success": true,
+		"user": map[string]interface{}{
+			"id":    userID,
+			"email": user.Email,
+		},
+		"tasks": tasks,
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(writer).Encode(response)
 }

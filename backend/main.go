@@ -39,6 +39,8 @@ func main() {
 
 	http.HandleFunc("/users", usersHandler)
 	http.HandleFunc("/tasks", tasksHandler)
+	http.HandleFunc("/login", loginUser)
+	http.HandleFunc("/signup", insertUser)
 
 	err := http.ListenAndServe(":8080", handlers.CORS(corsHeaders, corsMethods, corsObj)(http.DefaultServeMux))
 	if err != nil {
