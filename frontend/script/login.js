@@ -13,7 +13,7 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('Login successful!');
+            localStorage.setItem('userID', data.user.id);
             window.location.href = "home.html";
         } else {
             alert('Login failed: ' + data.message);
