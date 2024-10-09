@@ -1,0 +1,50 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background-color: #f4f4f4;
+}
+.header {
+    background-color: #007BFF;
+    color: white;
+    padding: 10px;
+    text-align: center;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 1.1em;
+    background-color: white;
+}
+table th, table td {
+    padding: 12px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+table th {
+    background-color: #007BFF;
+    color: white;
+}
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+.footer {
+    text-align: center;
+    padding: 20px;
+    margin-top: 20px;
+    background-color: #007BFF;
+    color: white;
+}
+.logout-btn {
+    background-color: #FF6347;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    float: right;
+}
+.logout-btn:hover {
+    background-color: #cc5043;
+}
